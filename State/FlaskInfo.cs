@@ -16,7 +16,8 @@ public record FlaskInfo(
     [property: Api] int Charges,
     [property: Api] int MaxCharges,
     [property: Api] int ChargesPerUse,
-    [property: Api] int RecoverAmount,
+    [property: Api] int LifeRecover,
+    [property: Api] int ManaRecover,
     [property: Api] string ClassName,
     [property: Api] string BaseName,
     [property: Api] string UniqueName,
@@ -35,13 +36,15 @@ public record FlaskInfo(
     {
         if (flaskItem?.Address is 0 or null || flaskItem.Item?.Address is null or 0)
         {
-            return new FlaskInfo(false, false, 0, 1, 1, 0, "", "", "", 100, new List<ItemMod>());
+            return new FlaskInfo(false, false, 0, 1, 1, 0, 0, "", "", "", 100, new List<ItemMod>());
         }
 
         var active = false;
         var canBeUsedIn = 0f;
         bool canbeUsed = false;
         int chargesUsed = 0;
+        int lifeRecover = 0;
+        int manaRecover = 0; 
         var chargeComponent = flaskItem.Item.GetComponent<Charges>();
         if (state.Player.TryGetComponent<Buffs>(out var playerBuffs))
         {
@@ -52,9 +55,11 @@ public record FlaskInfo(
                 chargesUsed = chargeComponent?.ChargesPerUse ?? 1;
                 var flaskStatsC = flaskItem.Item?.GetComponent<LocalStats>();
                 if (flaskStatsC?.StatDictionary != null && flaskStatsC.StatDictionary.TryGetValue(GameStat.LocalChargesUsedPct, out var chargesUsedPct)) {
-                    chargesUsed = (int) Math.Floor((double)(chargesUsed * (100 + chargesUsedPct) / 100));
+                    chargesUsed = chargesUsed * (100 + chargesUsedPct) / 100;
                 }
                 canbeUsed = (chargeComponent?.NumCharges ?? 0) >= chargesUsed;
+                lifeRecover = flask?.LifeRecover ?? 0;
+                manaRecover = flask?.ManaRecover ?? 0;
             }
 
             if (flaskItem.Item.TryGetComponent<Tincture>(out var tincture))
@@ -108,15 +113,8 @@ public record FlaskInfo(
             modsList = modsC.ExplicitMods;
         }
 
-        var recoveryAmount = 0;
-        if (flaskItem.Item.TryGetComponent<Flask>(out var FlaskC))
-        {
-            if (FlaskC.LifeRecover > 0) recoveryAmount = FlaskC.LifeRecover;
-            if (FlaskC.ManaRecover > 0) recoveryAmount = FlaskC.ManaRecover;
-        }
-
         return new FlaskInfo(active, canbeUsed, chargeComponent?.NumCharges ?? 0, chargeComponent?.ChargesMax ?? 1,
-            chargesUsed, recoveryAmount, className, baseName, uniqueName, canBeUsedIn, modsList);
+            chargesUsed, lifeRecover, manaRecover, className, baseName, uniqueName, canBeUsedIn, modsList);
     }
 
     private static float CalculateTinctureCanBeUsedIn(GameController state, List<ServerInventory.InventSlotItem> flaskItems, RuleInternalState internalState)
