@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using ExileCore;
+﻿using ExileCore;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ReAgent.State;
 
@@ -15,10 +16,13 @@ public record FlaskInfo(
     [property: Api] int Charges,
     [property: Api] int MaxCharges,
     [property: Api] int ChargesPerUse,
+    [property: Api] int LifeRecover,
+    [property: Api] int ManaRecover,
     [property: Api] string ClassName,
     [property: Api] string BaseName,
     [property: Api] string UniqueName,
-    [property: Api] float CanBeUsedIn)
+    [property: Api] float CanBeUsedIn,
+    [property: Api] List<ItemMod> Mods)
 {
     [Api]
     public string Name => !string.IsNullOrEmpty(UniqueName) ? UniqueName : BaseName;
@@ -32,12 +36,15 @@ public record FlaskInfo(
     {
         if (flaskItem?.Address is 0 or null || flaskItem.Item?.Address is null or 0)
         {
-            return new FlaskInfo(false, false, 0, 1, 1, "", "", "", 100);
+            return new FlaskInfo(false, false, 0, 1, 1, 0, 0, "", "", "", 100, new List<ItemMod>());
         }
 
         var active = false;
         var canBeUsedIn = 0f;
         bool canbeUsed = false;
+        int chargesUsed = 0;
+        int lifeRecover = 0;
+        int manaRecover = 0; 
         var chargeComponent = flaskItem.Item.GetComponent<Charges>();
         if (state.Player.TryGetComponent<Buffs>(out var playerBuffs))
         {
@@ -45,7 +52,14 @@ public record FlaskInfo(
             {
                 var buffNames = GetFlaskBuffNames(flask);
                 active = playerBuffs.BuffsList.Any(b => buffNames.Contains(b.Name) && b.FlaskSlot == index);
-                canbeUsed = (chargeComponent?.NumCharges ?? 0) >= (chargeComponent?.ChargesPerUse ?? 1);
+                chargesUsed = chargeComponent?.ChargesPerUse ?? 1;
+                var flaskStatsC = flaskItem.Item?.GetComponent<LocalStats>();
+                if (flaskStatsC?.StatDictionary != null && flaskStatsC.StatDictionary.TryGetValue(GameStat.LocalChargesUsedPct, out var chargesUsedPct)) {
+                    chargesUsed = chargesUsed * (100 + chargesUsedPct) / 100;
+                }
+                canbeUsed = (chargeComponent?.NumCharges ?? 0) >= chargesUsed;
+                lifeRecover = flask?.LifeRecover ?? 0;
+                manaRecover = flask?.ManaRecover ?? 0;
             }
 
             if (flaskItem.Item.TryGetComponent<Tincture>(out var tincture))
@@ -92,12 +106,15 @@ public record FlaskInfo(
         }
 
         var uniqueName = "";
-        if (flaskItem.Item.TryGetComponent<Mods>(out var mods))
+        var modsList = new List<ItemMod>();
+        if (flaskItem.Item.TryGetComponent<Mods>(out var modsC))
         {
-            uniqueName = mods.UniqueName;
+            uniqueName = modsC.UniqueName;
+            modsList = modsC.ExplicitMods;
         }
 
-        return new FlaskInfo(active, canbeUsed, chargeComponent?.NumCharges ?? 0, chargeComponent?.ChargesMax ?? 1, chargeComponent?.ChargesPerUse ?? 1, className, baseName, uniqueName, canBeUsedIn);
+        return new FlaskInfo(active, canbeUsed, chargeComponent?.NumCharges ?? 0, chargeComponent?.ChargesMax ?? 1,
+            chargesUsed, lifeRecover, manaRecover, className, baseName, uniqueName, canBeUsedIn, modsList);
     }
 
     private static float CalculateTinctureCanBeUsedIn(GameController state, List<ServerInventory.InventSlotItem> flaskItems, RuleInternalState internalState)
