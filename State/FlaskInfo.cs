@@ -28,7 +28,7 @@ public record FlaskInfo(
     public string Name => !string.IsNullOrEmpty(UniqueName) ? UniqueName : BaseName;
 
     [property: Api]
-    private List<ItemMod> Mods => ModListSource.Value;
+    public List<ItemMod> Mods => ModListSource.Value;
 
     public static FlaskInfo From(
         GameController state,
