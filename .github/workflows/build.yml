@@ -1,27 +1,39 @@
 name: Build ReAgent
+
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.3
+        uses: microsoft/setup-msbuild@v3
 
-      - name: Nuget restore
-        run: nuget restore ReAgent.sln
+      - name: Restore NuGet packages
+        run: nuget restore 你的解决方案.sln
 
-      - name: Build Release Any CPU
-        run: msbuild ReAgent.sln /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild
+      - name: Rebuild ReAgent project
+        run: msbuild src/ReAgent/ReAgent.csproj -t:Rebuild -p:Configuration=Release;Platform=x64 -verbosity:minimal
+
+      - name: Find generated ReAgent.dll
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse ReAgent.dll -ErrorAction SilentlyContinue
+          if ($files) {
+            $files | ForEach-Object { Write-Host "Found dll: $($_.FullName)" }
+          } else {
+            Write-Warning "ReAgent.dll was NOT generated!"
+          }
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
-          name: ReAgent_编译结果
+          name: ReAgent‑Release‑dll
           path: bin/Release/ReAgent.dll
