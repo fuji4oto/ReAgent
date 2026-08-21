@@ -8,21 +8,8 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 获取ReAgent源码
+      - name: 获取ReAgent源码（包含已经上传的lib/ExileApi.dll）
         uses: actions/checkout@v5
-
-      # 拉取 ExileApi‑Compiled 仓库，取出 ExileCore.dll 放到lib文件夹
-      - name: 获取依赖 ExileCore.dll
-        uses: actions/checkout@v5
-        with:
-          repository: exApiTools/ExileApi‑Compiled
-          path: extern/ExileApiCompiled
-
-      - name: 复制dll到lib目录
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path lib -Force
-          Copy-Item extern/ExileApiCompiled/ExileCore.dll lib/ExileCore.dll
 
       - name: 加载MSBuild编译工具
         uses: microsoft/setup-msbuild@v1.3
