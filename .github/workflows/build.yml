@@ -17,7 +17,7 @@ jobs:
         uses: microsoft/setup-msbuild@v3
 
       - name: Restore NuGet packages
-        run: nuget restore 你的解决方案.sln
+        run: nuget restore ReAgent.sln
 
       - name: Rebuild ReAgent project
         run: msbuild src/ReAgent/ReAgent.csproj -t:Rebuild -p:Configuration=Release;Platform=x64 -verbosity:minimal
