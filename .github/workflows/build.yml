@@ -8,15 +8,21 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 获取源码
+      - name: 获取ReAgent源码
         uses: actions/checkout@v5
 
-      - name: 准备依赖 ExileApi.dll
+      # 拉取 ExileApi‑Compiled 仓库，取出 ExileCore.dll 放到lib文件夹
+      - name: 获取依赖 ExileCore.dll
+        uses: actions/checkout@v5
+        with:
+          repository: exApiTools/ExileApi‑Compiled
+          path: extern/ExileApiCompiled
+
+      - name: 复制dll到lib目录
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path lib -Force
-          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-          Invoke-WebRequest -Uri "https://github.com/exApiTools/ExileApi‑Compiled/releases/latest/download/ExileApi.dll" -OutFile "lib\ExileApi.dll" -UseBasicParsing
+          Copy-Item extern/ExileApiCompiled/ExileCore.dll lib/ExileCore.dll
 
       - name: 加载MSBuild编译工具
         uses: microsoft/setup-msbuild@v1.3
