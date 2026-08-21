@@ -16,7 +16,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path lib -Force
           [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-          Invoke‑WebRequest -Uri "https://github.com/exApiTools/ExileApi‑Compiled/releases/latest/download/ExileApi.dll" -OutFile "lib\ExileApi.dll" -UseBasicParsing
+          Invoke-WebRequest -Uri "https://github.com/exApiTools/ExileApi‑Compiled/releases/latest/download/ExileApi.dll" -OutFile "lib\ExileApi.dll" -UseBasicParsing
 
       - name: 加载MSBuild编译工具
         uses: microsoft/setup-msbuild@v1.3
