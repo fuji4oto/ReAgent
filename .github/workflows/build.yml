@@ -2,20 +2,21 @@ name: Build ReAgent
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # 网页手动点按钮编译
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - name: 获取源码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 准备依赖 ExileApi.dll
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path lib -Force
-          Invoke‑WebRequest -Uri "https://github.com/exApiTools/ExileApi‑Compiled/releases/latest/download/ExileApi.dll" -OutFile "lib\ExileApi.dll"
+          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          Invoke‑WebRequest -Uri "https://github.com/exApiTools/ExileApi‑Compiled/releases/latest/download/ExileApi.dll" -OutFile "lib\ExileApi.dll" -UseBasicParsing
 
       - name: 加载MSBuild编译工具
         uses: microsoft/setup-msbuild@v1.3
@@ -27,7 +28,7 @@ jobs:
         run: msbuild ReAgent.sln /p:Configuration=Release /p:Platform=x64 /t:Rebuild
 
       - name: 上传编译产物ReAgent.dll
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ReAgent_编译结果
           path: bin/Release/ReAgent.dll
