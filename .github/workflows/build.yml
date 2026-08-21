@@ -1,40 +1,53 @@
-name: Build ReAgent
+name: Build ReAgent Plugin
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "master", "main" ]
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:   # ✅关键！增加手动点击运行按钮，解决 No matching events
+    branches: [ "master", "main" ]
+  workflow_dispatch: # 允许你在 GitHub 页面手动点击按钮触发编译
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest # 必须使用 Windows 环境编译 .NET 插件
+
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+    # 1. 检出当前的 ReAgent 源码
+    - name: Checkout ReAgent
+      uses: actions/checkout@v4
+      with:
+        path: ReAgent
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v3
+    # 2. 检出依赖项 ExileApi 主程序源码（用于提供必要的 DLL 引用）
+    - name: Checkout ExileApi-Compiled (Dependency)
+      uses: actions/checkout@v4
+      with:
+        repository: exApiTools/ExileApi-Compiled
+        path: ExileApi-Compiled
 
-      - name: Restore NuGet packages
-        run: nuget restore ReAgent.sln
+    # 3. 安装并配置 .NET 环境
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x # 根据项目实际需要的 .NET 版本调整（如 8.0 或 7.0）
 
-      - name: Rebuild ReAgent project
-        run: msbuild src/ReAgent/ReAgent.csproj -t:Rebuild -p:Configuration=Release;Platform=x64 -verbosity:minimal
+    # 4. 还原 NuGet 依赖包
+    - name: Restore NuGet Packages
+      run: |
+        cd ReAgent
+        dotnet restore
 
-      - name: Find generated ReAgent.dll
-        shell: pwsh
-        run: |
-          $files = Get-ChildItem -Recurse ReAgent.dll -ErrorAction SilentlyContinue
-          if ($files) {
-            $files | ForEach-Object { Write-Host "Found dll: $($_.FullName)" }
-          } else {
-            Write-Warning "ReAgent.dll was NOT generated!"
-          }
+    # 5. 执行编译指令
+    - name: Build Project
+      run: |
+        cd ReAgent
+        dotnet build --configuration Release --no-restore
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ReAgent‑Release‑dll
-          path: bin/Release/ReAgent.dll
+    # 6. 将编译好的文件归档并上传
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ReAgent-Plugin-Release
+        path: |
+          ReAgent/bin/Release/
+          ReAgent/bin/x64/Release/
