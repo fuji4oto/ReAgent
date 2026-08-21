@@ -8,19 +8,19 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 获取ReAgent源码（包含lib/ExileApi.dll）
+      - name: Checkout source
         uses: actions/checkout@v5
 
-      - name: 加载MSBuild编译工具
+      - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.3
 
-      - name: Nuget还原依赖包
+      - name: Nuget restore
         run: nuget restore ReAgent.sln
 
-      - name: MSBuild编译 Release Any CPU
+      - name: Build Release Any CPU
         run: msbuild ReAgent.sln /p:Configuration=Release /p:Platform="Any CPU" /t:Rebuild
 
-      - name: 上传编译产物ReAgent.dll
+      - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: ReAgent_编译结果
