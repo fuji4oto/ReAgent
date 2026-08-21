@@ -2,9 +2,10 @@ name: Build ReAgent
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:   # ✅关键！增加手动点击运行按钮，解决 No matching events
 
 jobs:
   build:
